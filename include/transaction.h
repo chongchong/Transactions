@@ -122,7 +122,7 @@ private:
 	//--------------------------------------------------------------------
 	// Transaction::InsertLock
 	//
-	// Input    : The identifier or the object which is locked and if it is a shared lock.
+	// Input    : The identifier of the object which is locked and if it is a shared lock.
 	// Purpose  : Add entry into lock list to keep track of all locks Acquired by 
 	//			  this transaction.
 	// Return   : OK. Should never return FAIL.
