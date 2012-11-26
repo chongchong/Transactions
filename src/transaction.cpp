@@ -34,8 +34,13 @@ void Transaction::ReleaseAllLocks() //written by cw474
 		shared=LockList.back().second;
 		if (shared){
 			LockManager::ReleaseSharedLock(this->tid,oid);
+			//cout << "T"<<this->tid<<" release S for "<<oid<<endl;
 		}
-		else LockManager::ReleaseExclusiveLock(this->tid,oid);
+		else {
+			LockManager::ReleaseExclusiveLock(this->tid,oid);
+			//cout << "T"<<this->tid<<" release X for "<<oid<<endl;
+		}
+		LockList.pop_back();
 	}
 	
 }
@@ -112,7 +117,8 @@ Status Transaction::EndTransaction()
 	if (this->status != ABORTED) {
 		ReleaseAllLocks();
 	}
-
+	//for debugging--cw474
+	cout << "Transaction " << this->tid << " ended" << endl;
 	return OK;
 }
 
