@@ -11,9 +11,10 @@ struct Node {
 	int numLocks; // number of locks this transaction holds
 	int index;  // used for Tarjan's Algorithm
 	int lowLink; // used for Tarjan's Algorithm
+	bool inStack; // used for Tarjan's Algorithm
 	
-	Node(int o, int t, int i, int l, int n){
-		oid = o; tid = t; index = i; lowLink = l; numLocks = n;
+	Node(int o, int t, int i, int l, int n, bool s){
+		oid = o; tid = t; index = i; lowLink = l; numLocks = n; inStack = s;
 	}
 };
 

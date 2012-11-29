@@ -11,9 +11,11 @@ bool abortT[maxT];
 //POSSIBLE DATA STRUCTURE FOR WAIT-FOR GRAPH
 bool waitFor[maxT][maxT];
 
-vector<vector<Node *>> *cycles;
+vector<vector<Node *>*> *cycles;
 map<int,Node*> *nodeTable;
 stack<Node *> *nodeStack;
+
+int index = 0;
 
 void DeadlockDetector::BuildWaitForGraph()
 {
@@ -33,7 +35,7 @@ void DeadlockDetector::BuildWaitForGraph()
 		for each (int pid in lock->lockingList)
 		{
 			if (nodeTable->count(pid) == 0) {  // new graph node 
-				Node *v = new Node(oid,pid,-1,-1,1);
+				Node *v = new Node(oid,pid,-1,-1,1,false);
 				nodeTable->insert(pair<int,Node *>(pid,v)); // add to table
 				haveLock->push_back(pid); // add to set of transactions that have this lock
 				//cout << "table count is " << nodeTable->size() << "\n" << endl;
@@ -50,7 +52,7 @@ void DeadlockDetector::BuildWaitForGraph()
 		{
 			int pid = req->pid;
 			if (nodeTable->count(pid) == 0) {  // new graph node
-				Node *v = new Node(oid,pid,-1,-1,0);
+				Node *v = new Node(oid,pid,-1,-1,0,false);
 				nodeTable->insert(pair<int,Node *>(pid,v)); // add to table
 			}
 			// build waitFor
@@ -101,32 +103,81 @@ void DeadlockDetector::BuildWaitForGraph()
 
 void DeadlockDetector::AnalyzeWaitForGraph()
 {
-		
 	// Awesome algorithm starts here
+	DetectCycle();
+	// Determine abort
+	int numLocks = 0; Node *abortTarget; bool found = false;
+	for (int i=0;i<cycles->size();i++) {
+		vector<Node *> *list = cycles->at(i);
+		for (int j=0;j<list->size();j++) {
+			Node *v = list->at(j);
+			if (v->numLocks > numLocks) { // find transaction that holds the most locks
+				numLocks = v->numLocks;
+				abortTarget = v;
+				found = true;
+			}
+		}
+	}
+	if (found) abortT[abortTarget->tid] = true;
 
-
-	
+	// Reset graph and such
+	for (int i=0;i<maxT;i++){
+		for (int j=0;j<maxT;j++){
+			waitFor[i][j] = 0;
+		}
+	}
+	cycles->clear();
+	while (!nodeStack->empty()) {
+		nodeStack->pop();
+	}
+	nodeTable->clear();
 }
 
 
 void DeadlockDetector::DetectCycle() {
-	int index = 0;
-	//map<int,Node *>::iterator it = nodeTable->find(pid);
-		//		Node *v = it->second;
+	
 	map<int, Node *>::iterator  it;
 	
-	//for(it = nodeTable->begin(); it != nodeTable->end(); it++) {
-		//Node *v = it->second;
-		/*
+	for(it = nodeTable->begin(); it != nodeTable->end(); it++) {
+		Node *v = it->second;
 		if (v->index < 0){
 			StrongConnect(v);
         }
-    }*/
+    }
 }
 
-//template <typename T>
 void DeadlockDetector::StrongConnect(Node *v){
+	v->index = index;
+    v->lowLink = index;
+    index++;
+    nodeStack->push(v);
+	v->inStack = true;
+
+    for (int i=0;i<maxT;i++) {
+		if (waitFor[v->tid][i] == 1){ // v is waiting for w
+			map<int,Node*>::iterator it;
+			it = nodeTable->find(i);
+			Node *w = it->second; // find w
+			if (w->index < 0){
+				StrongConnect(w);
+				v->lowLink = min(v->lowLink, w->lowLink);
+			} else if (w->inStack){
+				v->lowLink = min(v->lowLink, w->index);
+			}
+		}
+	}
+
+	if (v->lowLink == v->index){ // v is the root of a cycle
+		vector<Node *> *list = new vector<Node *>();    //  <----------a new without delete
+		Node *w;
+		do {
+			w = nodeStack->top();
+			nodeStack->pop();
+			list->push_back(w);
+		} while (v != w);
 	
+		cycles->push_back(list);
+	}
 }
 
 void DeadlockDetector::AbortTransactions()
@@ -190,7 +241,7 @@ void DeadlockDetector::run()
 		memset(waitFor, 0 ,sizeof(waitFor));
 		//INITIALIZE ANY OTHER DATA STRUCTURES YOU DECLARE.
 
-		cycles = new vector<vector<Node *>>;
+		cycles = new vector<vector<Node *>*>;
 		nodeTable = new map<int,Node *>();
 		nodeStack = new stack<Node *>();
 
