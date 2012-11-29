@@ -23,15 +23,30 @@ void Transaction::InsertLock(int oid, bool shared) //written by cw474
 	LockList.push_back(lock);
 }
 
+/** a helper function for ReleaseAllLocks()
+ ** use to compare two objects according to their IDs 
+ ** if two objects have the same IDs, then exclusive locks will proceed shared locks
+ **/
+bool CompareLockId(pair<int,bool> a, pair<int,bool> b){ // created by cw474
+	if (a.first != b.first) return a.first<b.first;
+	else return a.second <= b.second;
+}
+
 void Transaction::ReleaseAllLocks() //written by cw474
 {
-	// need further consideration on write/read more than once on the same object. 
-	// now i am assuming no thing will happen if i release same lock twice
+	// need further consideration on write/read more than once on the same object.
 	int oid;
 	bool shared;
+	sort(LockList.begin(),LockList.end(),CompareLockId);
 	while( !LockList.empty()){
 		oid=LockList.back().first;
 		shared=LockList.back().second;
+		LockList.pop_back();
+		while (!LockList.empty() && LockList.back().first==oid){ // this while loop ensures that we only release the same lock once
+			oid=LockList.back().first;
+			shared=LockList.back().second;
+			LockList.pop_back();
+		}
 		if (shared){
 			LockManager::ReleaseSharedLock(this->tid,oid);
 			//cout << "T"<<this->tid<<" release S for "<<oid<<endl;
@@ -40,7 +55,7 @@ void Transaction::ReleaseAllLocks() //written by cw474
 			LockManager::ReleaseExclusiveLock(this->tid,oid);
 			//cout << "T"<<this->tid<<" release X for "<<oid<<endl;
 		}
-		LockList.pop_back();
+		
 	}
 	
 }
