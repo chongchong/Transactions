@@ -42,7 +42,8 @@ void Transaction::ReleaseAllLocks() //written by cw474
 		oid=LockList.back().first;
 		shared=LockList.back().second;
 		LockList.pop_back();
-		while (!LockList.empty() && LockList.back().first==oid){ // this while loop ensures that we only release the same lock once
+		// this while loop ensures that we only release the same lock once
+		while (!LockList.empty() && LockList.back().first==oid){ 
 			oid=LockList.back().first;
 			shared=LockList.back().second;
 			LockList.pop_back();
@@ -62,7 +63,7 @@ void Transaction::ReleaseAllLocks() //written by cw474
 
 Status Transaction::Read(KeyType key, DataType &value) //written by cw474
 {
-	if (LockManager::AcquireSharedLock(this ->tid, key )==false){ // not sure if key is oid. need further consideration !!!!!!
+	if (LockManager::AcquireSharedLock(this ->tid, key )==false){ 
 		this -> AbortTransaction();
 		return FAIL;
 	}
@@ -97,7 +98,7 @@ Status Transaction::GroupWrite() //written by cw474
 		switch(kvp.op)
 		{
 			case INSERT:
-				opStatus= TSHI ->InsertKeyValue(kvp.key,kvp.value); // do we need to consider that writes changes index???
+				opStatus= TSHI ->InsertKeyValue(kvp.key,kvp.value); 
 				break;
 			case DELETE:
 				opStatus= TSHI ->DeleteKey(kvp.key);
@@ -133,7 +134,7 @@ Status Transaction::EndTransaction()
 		ReleaseAllLocks();
 	}
 	//for debugging--cw474
-	cout << "Transaction " << this->tid << " ended" << endl;
+	//cout << "Transaction " << this->tid << " ended" << endl;
 	return OK;
 }
 
