@@ -41,7 +41,8 @@ void Transaction::ReleaseAllLocks()
 		oid=LockList.back().first;
 		shared=LockList.back().second;
 		LockList.pop_back();
-		while (!LockList.empty() && LockList.back().first==oid){ // this while loop ensures that we only release the same lock once
+		// this while loop ensures that we only release the same lock once
+		while (!LockList.empty() && LockList.back().first==oid){ 
 			oid=LockList.back().first;
 			shared=LockList.back().second;
 			LockList.pop_back();
@@ -59,7 +60,7 @@ void Transaction::ReleaseAllLocks()
 
 Status Transaction::Read(KeyType key, DataType &value) 
 {
-	if (LockManager::AcquireSharedLock(this ->tid, key )==false){
+	if (LockManager::AcquireSharedLock(this ->tid, key )==false){ 
 		this -> AbortTransaction();
 		return FAIL;
 	}
