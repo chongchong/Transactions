@@ -3,18 +3,17 @@
 
 #include "lock.h"
 
+// A Node represents a transaction
+// It's used to analyze the wait-for graph
 struct Node {
-	int oid; // object id
 	int tid; // transaction id
-	LockType type; // type of lock this trans is holding
-	//vector<Node*> *waitFor; // a vector of transactions this is waiting for
 	int numLocks; // number of locks this transaction holds
 	int index;  // used for Tarjan's Algorithm
 	int lowLink; // used for Tarjan's Algorithm
 	bool inStack; // used for Tarjan's Algorithm
 	
-	Node(int o, int t, int i, int l, int n, bool s){
-		oid = o; tid = t; index = i; lowLink = l; numLocks = n; inStack = s;
+	Node(int t, int i, int l, int n, bool s){
+		tid = t; numLocks = n; index = i; lowLink = l; inStack = s;
 	}
 };
 
@@ -65,7 +64,22 @@ public:
 	void AbortTransactions();
 
 private:
+	//--------------------------------------------------------------------
+	// DeadlockDetector::DetectCycle
+	//
+	// Input    : None.
+	// Purpose  : Part of Tarjan's Algorithm the detects cycles.
+	// Return   : None.
+	//--------------------------------------------------------------------
 	void DetectCycle();
+
+	//--------------------------------------------------------------------
+	// DeadlockDetector::StrongConnect
+	//
+	// Input    : A Node struct of transaction
+	// Purpose  : Determine which strong connected partition it belongs to
+	// Return   : None.
+	//--------------------------------------------------------------------
 	void StrongConnect(Node *v);
 };
 

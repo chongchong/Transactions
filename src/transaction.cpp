@@ -17,7 +17,7 @@ Status Transaction::AbortTransaction()
 	return OK;
 }
 
-void Transaction::InsertLock(int oid, bool shared) //written by cw474
+void Transaction::InsertLock(int oid, bool shared)
 {   
 	pair<int,bool> lock(oid,shared);
 	LockList.push_back(lock);
@@ -27,14 +27,13 @@ void Transaction::InsertLock(int oid, bool shared) //written by cw474
  ** use to compare two objects according to their IDs 
  ** if two objects have the same IDs, then exclusive locks will proceed shared locks
  **/
-bool CompareLockId(pair<int,bool> a, pair<int,bool> b){ // created by cw474
+bool CompareLockId(pair<int,bool> a, pair<int,bool> b){
 	if (a.first != b.first) return a.first<b.first;
 	else return a.second <= b.second;
 }
 
-void Transaction::ReleaseAllLocks() //written by cw474
+void Transaction::ReleaseAllLocks()
 {
-	// need further consideration on write/read more than once on the same object.
 	int oid;
 	bool shared;
 	sort(LockList.begin(),LockList.end(),CompareLockId);
@@ -49,20 +48,18 @@ void Transaction::ReleaseAllLocks() //written by cw474
 		}
 		if (shared){
 			LockManager::ReleaseSharedLock(this->tid,oid);
-			//cout << "T"<<this->tid<<" release S for "<<oid<<endl;
 		}
 		else {
 			LockManager::ReleaseExclusiveLock(this->tid,oid);
-			//cout << "T"<<this->tid<<" release X for "<<oid<<endl;
 		}
 		
 	}
 	
 }
 
-Status Transaction::Read(KeyType key, DataType &value) //written by cw474
+Status Transaction::Read(KeyType key, DataType &value) 
 {
-	if (LockManager::AcquireSharedLock(this ->tid, key )==false){ // not sure if key is oid. need further consideration !!!!!!
+	if (LockManager::AcquireSharedLock(this ->tid, key )==false){
 		this -> AbortTransaction();
 		return FAIL;
 	}
@@ -70,7 +67,7 @@ Status Transaction::Read(KeyType key, DataType &value) //written by cw474
 	return TSHI->GetValue(key, value);
 }
 
-Status Transaction::AddWritePair(KeyType key, DataType value, OpType op) //written by cw474
+Status Transaction::AddWritePair(KeyType key, DataType value, OpType op)
 {
 	try {
 		KVP kvp;
@@ -83,9 +80,8 @@ Status Transaction::AddWritePair(KeyType key, DataType value, OpType op) //writt
 	return OK;
 }
 
-Status Transaction::GroupWrite() //written by cw474
+Status Transaction::GroupWrite() 
 {
-	this->status=GROUPWRITE; // not sure if this should put in the beginning or in the end !!!!!
 	while(! writeList.empty()){
 		KVP kvp=writeList.back();
 		if (LockManager::AcquireExclusiveLock(this->tid, kvp.key)==false){
@@ -97,7 +93,7 @@ Status Transaction::GroupWrite() //written by cw474
 		switch(kvp.op)
 		{
 			case INSERT:
-				opStatus= TSHI ->InsertKeyValue(kvp.key,kvp.value); // do we need to consider that writes changes index???
+				opStatus= TSHI ->InsertKeyValue(kvp.key,kvp.value); 
 				break;
 			case DELETE:
 				opStatus= TSHI ->DeleteKey(kvp.key);
@@ -111,6 +107,7 @@ Status Transaction::GroupWrite() //written by cw474
 		if (opStatus==FAIL) return FAIL;
 		writeList.pop_back();
 	}
+	this->status=GROUPWRITE;
 	return OK;
 }
 
@@ -132,8 +129,6 @@ Status Transaction::EndTransaction()
 	if (this->status != ABORTED) {
 		ReleaseAllLocks();
 	}
-	//for debugging--cw474
-	cout << "Transaction " << this->tid << " ended" << endl;
 	return OK;
 }
 
